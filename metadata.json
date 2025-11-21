@@ -1,0 +1,5 @@
+{
+  "name": "RetroFlash Editor",
+  "description": "A private, client-side photo editor specializing in vintage, newspaper, and retro aesthetics. Works offline without censorship.",
+  "requestFramePermissions": []
+}
