@@ -1,9 +1,58 @@
-
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, Component, ErrorInfo } from 'react';
 import { applyRetroFilter, FilterType } from './utils/imageProcessing';
 import { Spinner } from './components/Spinner';
 import { UploadIcon, DownloadIcon, TrashIcon, ImageIcon } from './components/Icons';
 import { blobToBase64 } from './utils/fileUtils';
+
+// --- Error Boundary Component ---
+
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("React Error Boundary caught:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-stone-950 flex items-center justify-center p-4">
+          <div className="bg-stone-900 border border-red-900/50 p-8 rounded-xl max-w-lg w-full">
+            <h2 className="text-2xl font-display font-bold text-red-500 mb-4">Something went wrong</h2>
+            <p className="text-stone-400 mb-4">The application encountered an unexpected error.</p>
+            <div className="bg-black/50 p-4 rounded border border-stone-800 mb-6 overflow-auto max-h-40">
+              <code className="text-xs text-red-400 font-mono">{this.state.error?.message}</code>
+            </div>
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-full py-3 bg-stone-800 hover:bg-stone-700 text-white rounded-lg font-medium transition-colors"
+            >
+              Reload Application
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const FILTERS: { id: FilterType; name: string; desc: string; color: string }[] = [
   { id: '70s-mag', name: '70s Vintage', desc: 'Warm, soft, faded yellow paper', color: 'bg-amber-200 text-amber-900' },
@@ -25,7 +74,7 @@ const FILTERS: { id: FilterType; name: string; desc: string; color: string }[] =
   { id: 'blueprint', name: 'Blueprint', desc: 'Architectural blue', color: 'bg-blue-900 text-blue-100' },
 ];
 
-export default function App() {
+function AppContent() {
   const [sourceImage, setSourceImage] = useState<string | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('70s-mag');
@@ -52,13 +101,13 @@ export default function App() {
             setGeneratedImage(result);
         } catch (err) {
             console.error(err);
-            setError("Error processing image");
+            setError("Error processing image: " + (err as Error).message);
         } finally {
             setLoading(false);
         }
       }, 50);
     } catch (err) {
-      setError("Failed to process image.");
+      setError("Failed to initialize processing.");
       setLoading(false);
     }
   };
@@ -73,7 +122,7 @@ export default function App() {
       setSourceImage(base64);
       // Effect hook will trigger processing
     } catch (err) {
-      setError("Failed to process image file.");
+      setError("Failed to read image file.");
       console.error(err);
       setLoading(false);
     } finally {
@@ -252,5 +301,13 @@ export default function App() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <AppContent />
+    </ErrorBoundary>
   );
 }
