@@ -23,22 +23,35 @@
       }
     </script>
     
-    <!-- Global Error Handler: Affiche les erreurs sur l'écran au lieu de la console -->
+    <!-- Global Error Handler -->
     <script>
       window.addEventListener('error', function(event) {
-        const root = document.getElementById('root');
+        // Ignorer les erreurs bénignes de redimensionnement
+        if (event.message && event.message.includes('ResizeObserver')) return;
+
         const errorMsg = event.message || "Unknown Error";
+        
+        // Si l'erreur est déjà affichée, ne pas dupliquer
+        if (document.getElementById('fatal-error-overlay')) return;
+
+        // Ne pas afficher l'overlay pour les erreurs qui ne sont pas fatales au démarrage
+        // sauf si le spinner est encore visible
+        const loader = document.getElementById('loader-spinner');
+        if (!loader || loader.style.display === 'none') return;
+
         const html = `
-          <div style="position:fixed; top:0; left:0; width:100%; height:100%; background:#1c1917; color:#ef4444; padding:20px; z-index:9999; font-family:monospace; overflow:auto;">
-            <h2 style="font-size:24px; margin-bottom:10px;">Application Crash</h2>
-            <p style="color:#a8a29e; margin-bottom:20px;">Une erreur a empêché le chargement de l'application :</p>
-            <div style="background:#000; padding:15px; border:1px solid #444; border-radius:5px;">
+          <div id="fatal-error-overlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#1c1917; color:#ef4444; padding:20px; z-index:9999; font-family:monospace; overflow:auto;">
+            <h2 style="font-size:24px; margin-bottom:10px;">Start-up Failure</h2>
+            <p style="color:#a8a29e; margin-bottom:20px;">L'application n'a pas pu démarrer. Une erreur critique est survenue.</p>
+            <div style="background:#000; padding:15px; border:1px solid #444; border-radius:5px; white-space: pre-wrap;">
               ${errorMsg}
             </div>
-            <p style="margin-top:20px; color:#78716c;">Try refreshing the page. If the error persists, check the console (F12).</p>
+            <button onclick="window.location.reload()" style="margin-top:20px; padding:10px 20px; background:#444; color:white; border:none; cursor:pointer;">Recharger la page</button>
           </div>
         `;
-        if (document.body) document.body.innerHTML += html;
+        
+        if (document.body) document.body.insertAdjacentHTML('beforeend', html);
+        if (loader) loader.style.display = 'none';
       });
     </script>
 
@@ -51,24 +64,27 @@
         font-family: 'Playfair Display', serif;
       }
     </style>
-  <script type="importmap">
+    
+    <!-- IMPORT MAP CLEAN: React 18.2.0 Only. No trailing slashes to avoid wildcard matching issues. -->
+    <script type="importmap">
 {
   "imports": {
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0",
-    "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+    "react": "https://esm.sh/react@18.2.0?dev",
+    "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime?dev",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client?dev",
+    "react-dom": "https://esm.sh/react-dom@18.2.0?dev",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/"
   }
 }
 </script>
 </head>
   <body class="bg-stone-950 text-stone-200 antialiased selection:bg-amber-500/30">
     <div id="root">
-      <!-- Loading State visible before React mounts -->
-      <div style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #78716c;">
+      <!-- Loading State -->
+      <div id="loader-spinner" style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #78716c;">
         <div style="width: 40px; height: 40px; border: 3px solid #d97706; border-top-color: transparent; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 16px;"></div>
-        <p style="font-family: monospace;">Initializing RetroFlash...</p>
+        <p style="font-family: monospace;">Initializing RetroFlash v1.0...</p>
       </div>
       <style>
         @keyframes spin { to { transform: rotate(360deg); } }
